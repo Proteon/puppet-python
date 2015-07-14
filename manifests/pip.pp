@@ -66,6 +66,7 @@ define python::pip (
   $proxy           = false,
   $egg             = false,
   $editable        = false,
+  $installed_regex = '',
   $environment     = [],
   $install_args    = '',
   $uninstall_args  = '',
@@ -120,14 +121,19 @@ define python::pip (
     fail('python::pip cannot provide uninstall_args with ensure => present')
   }
 
-  # Check if searching by explicit version.
-  if $ensure =~ /^((19|20)[0-9][0-9]-(0[1-9]|1[1-2])-([0-2][1-9]|3[0-1])|[0-9]+\.[0-9]+(\.[0-9]+)?)$/ {
-    $grep_regex = "^${pkgname}==${ensure}\$"
-  } else {
-    $grep_regex = $pkgname ? {
-      /==/    => "^${pkgname}\$",
-      default => "^${pkgname}==",
+
+  if $installed_regex == '' {
+    # Check if searching by explicit version.
+    if $ensure =~ /^((19|20)[0-9][0-9]-(0[1-9]|1[1-2])-([0-2][1-9]|3[0-1])|[0-9]+\.[0-9]+(\.[0-9]+)?)$/ {
+      $grep_regex = "^${pkgname}==${ensure}\$"
+    } else {
+      $grep_regex = $pkgname ? {
+        /==/    => "^${pkgname}\$",
+        default => "^${pkgname}==",
+      }
     }
+  } else {
+    $grep_regex = $installed_regex
   }
 
   $egg_name = $egg ? {
